@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Stopwatch (MM:SS)</title>
+    <title>Simple Stopwatch (MM:SS) – Toggle Button</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,20 +42,27 @@
         }
         button {
             font-size: 18px;
-            padding: 12px 28px;
+            padding: 12px 32px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             color: white;
             font-weight: bold;
-            transition: all 0.15s;
+            transition: all 0.18s;
         }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
-        #start  { background-color: #4CAF50; }
-        #stop   { background-color: #f44336; }
-        #reset  { background-color: #2196F3; }
-        #set    { background-color: #9C27B0; }
 
+        #toggle {
+            min-width: 140px;
+            background-color: #4CAF50;      /* green when stopped (Start) */
+        }
+        #toggle.running {
+            background-color: #f44336;      /* red when running (Pause) */
+        }
+
+        #reset {
+            background-color: #2196F3;
+        }
 
         .set-start {
             margin-top: 10px;
@@ -83,17 +90,13 @@
 </head>
 <body>
 
-
     <div class="stopwatch">
         <div id="display">00:00</div>
 
-
         <div class="controls">
-            <button id="start">Start</button>
-            <button id="stop">Stop</button>
+            <button id="toggle">Start</button>
             <button id="reset">Reset</button>
         </div>
-
 
         <div class="set-start">
             <input type="text" id="startTimeInput" placeholder="e.g. 5:30 or 120" />
@@ -102,49 +105,40 @@
         </div>
     </div>
 
-
     <script>
         let timer;
         let startTime;
         let elapsedTime = 0;
         let isRunning = false;
-        let initialOffset = 0; // manual start time in milliseconds
-
+        let initialOffset = 0; // manual start time in ms
 
         const display = document.getElementById('display');
-        const startBtn = document.getElementById('start');
-        const stopBtn  = document.getElementById('stop');
+        const toggleBtn = document.getElementById('toggle');
         const resetBtn = document.getElementById('reset');
         const setBtn   = document.getElementById('set');
         const input    = document.getElementById('startTimeInput');
-
 
         function parseTimeString(str) {
             str = str.trim().replace(/\s+/g, '');
             if (!str) return 0;
 
-
-            // Just digits → total seconds
             if (/^\d+$/.test(str)) {
                 return parseInt(str, 10) * 1000;
             }
 
-
             const parts = str.split(':').map(Number);
             if (parts.some(isNaN)) return -1;
 
-
             let ms = 0;
             if (parts.length === 1) {
-                ms = parts[0] * 1000;           // just seconds
+                ms = parts[0] * 1000;
             } else if (parts.length === 2) {
-                ms = (parts[0] * 60 + parts[1]) * 1000; // MM:SS
+                ms = (parts[0] * 60 + parts[1]) * 1000;
             } else {
                 return -1;
             }
             return ms;
         }
-
 
         function formatTime(msTotal) {
             const totalSeconds = Math.floor(msTotal / 1000);
@@ -153,12 +147,10 @@
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-
         function updateDisplay() {
             const current = initialOffset + elapsedTime;
             display.textContent = formatTime(current);
         }
-
 
         function fullReset() {
             isRunning = false;
@@ -166,39 +158,40 @@
             initialOffset = 0;
             elapsedTime = 0;
             updateDisplay();
+            toggleBtn.textContent = 'Start';
+            toggleBtn.classList.remove('running');
             input.value = '';
         }
 
-
-        startBtn.addEventListener('click', () => {
-            if (!isRunning) {
+        function toggleTimer() {
+            if (isRunning) {
+                // Pause
+                isRunning = false;
+                clearInterval(timer);
+                toggleBtn.textContent = 'Start';
+                toggleBtn.classList.remove('running');
+            } else {
+                // Start / Resume
                 isRunning = true;
                 startTime = Date.now() - elapsedTime;
                 timer = setInterval(() => {
                     elapsedTime = Date.now() - startTime;
                     updateDisplay();
-                }, 100); // 100 ms is smooth enough for seconds-only
+                }, 100);
+                toggleBtn.textContent = 'Pause';
+                toggleBtn.classList.add('running');
             }
-        });
+        }
 
-
-        stopBtn.addEventListener('click', () => {
-            if (isRunning) {
-                isRunning = false;
-                clearInterval(timer);
-            }
-        });
-
+        toggleBtn.addEventListener('click', toggleTimer);
 
         resetBtn.addEventListener('click', fullReset);
 
-
         setBtn.addEventListener('click', () => {
             if (isRunning) {
-                alert("Please stop or reset the timer first.");
+                alert("Please pause or reset the timer first.");
                 return;
             }
-
 
             const parsed = parseTimeString(input.value);
             if (parsed < 0) {
@@ -206,22 +199,17 @@
                 return;
             }
 
-
             initialOffset = parsed;
             elapsedTime = 0;
             updateDisplay();
         });
 
-
-        // Press Enter to set
         input.addEventListener('keypress', e => {
             if (e.key === 'Enter') setBtn.click();
         });
-
 
         // Initial display
         updateDisplay();
     </script>
 </body>
-
 </html>
