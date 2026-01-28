@@ -1,0 +1,226 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Stopwatch (MM:SS)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .stopwatch {
+            text-align: center;
+            background: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            max-width: 360px;
+            width: 100%;
+        }
+        #display {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0 30px;
+            font-family: monospace;
+            letter-spacing: 4px;
+            color: #111;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        button {
+            font-size: 18px;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            transition: all 0.15s;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        #start  { background-color: #4CAF50; }
+        #stop   { background-color: #f44336; }
+        #reset  { background-color: #2196F3; }
+        #set    { background-color: #9C27B0; }
+
+
+        .set-start {
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            font-size: 20px;
+            padding: 12px 16px;
+            width: 160px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            box-shadow: 0 0 0 3px rgba(156,39,176,0.15);
+        }
+        .info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="stopwatch">
+        <div id="display">00:00</div>
+
+
+        <div class="controls">
+            <button id="start">Start</button>
+            <button id="stop">Stop</button>
+            <button id="reset">Reset</button>
+        </div>
+
+
+        <div class="set-start">
+            <input type="text" id="startTimeInput" placeholder="e.g. 5:30 or 120" />
+            <button id="set">Set Start</button>
+            <div class="info">Enter minutes:seconds or total seconds</div>
+        </div>
+    </div>
+
+
+    <script>
+        let timer;
+        let startTime;
+        let elapsedTime = 0;
+        let isRunning = false;
+        let initialOffset = 0; // manual start time in milliseconds
+
+
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('start');
+        const stopBtn  = document.getElementById('stop');
+        const resetBtn = document.getElementById('reset');
+        const setBtn   = document.getElementById('set');
+        const input    = document.getElementById('startTimeInput');
+
+
+        function parseTimeString(str) {
+            str = str.trim().replace(/\s+/g, '');
+            if (!str) return 0;
+
+
+            // Just digits → total seconds
+            if (/^\d+$/.test(str)) {
+                return parseInt(str, 10) * 1000;
+            }
+
+
+            const parts = str.split(':').map(Number);
+            if (parts.some(isNaN)) return -1;
+
+
+            let ms = 0;
+            if (parts.length === 1) {
+                ms = parts[0] * 1000;           // just seconds
+            } else if (parts.length === 2) {
+                ms = (parts[0] * 60 + parts[1]) * 1000; // MM:SS
+            } else {
+                return -1;
+            }
+            return ms;
+        }
+
+
+        function formatTime(msTotal) {
+            const totalSeconds = Math.floor(msTotal / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+
+        function updateDisplay() {
+            const current = initialOffset + elapsedTime;
+            display.textContent = formatTime(current);
+        }
+
+
+        function fullReset() {
+            isRunning = false;
+            clearInterval(timer);
+            initialOffset = 0;
+            elapsedTime = 0;
+            updateDisplay();
+            input.value = '';
+        }
+
+
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                startTime = Date.now() - elapsedTime;
+                timer = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateDisplay();
+                }, 100); // 100 ms is smooth enough for seconds-only
+            }
+        });
+
+
+        stopBtn.addEventListener('click', () => {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timer);
+            }
+        });
+
+
+        resetBtn.addEventListener('click', fullReset);
+
+
+        setBtn.addEventListener('click', () => {
+            if (isRunning) {
+                alert("Please stop or reset the timer first.");
+                return;
+            }
+
+
+            const parsed = parseTimeString(input.value);
+            if (parsed < 0) {
+                alert("Invalid format.\nUse: 5:30  or  120  or  2:05");
+                return;
+            }
+
+
+            initialOffset = parsed;
+            elapsedTime = 0;
+            updateDisplay();
+        });
+
+
+        // Press Enter to set
+        input.addEventListener('keypress', e => {
+            if (e.key === 'Enter') setBtn.click();
+        });
+
+
+        // Initial display
+        updateDisplay();
+    </script>
+</body>
+</html>
