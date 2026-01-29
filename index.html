@@ -54,14 +54,20 @@
 
         #toggle {
             min-width: 140px;
-            background-color: #4CAF50;      /* green when stopped (Start) */
+            background-color: #4CAF50; /* green when stopped (Start) */
         }
         #toggle.running {
-            background-color: #f44336;      /* red when running (Pause) */
+            background-color: #f44336; /* red when running (Pause) */
         }
-
         #reset {
             background-color: #2196F3;
+        }
+        #set {
+            background-color: #9C27B0;     /* purple */
+            min-width: 140px;
+        }
+        #set:hover {
+            background-color: #7B1FA2;
         }
 
         .set-start {
@@ -89,19 +95,16 @@
     </style>
 </head>
 <body>
-
     <div class="stopwatch">
         <div id="display">00:00</div>
-
         <div class="controls">
-            <button id="toggle">Start</button>
             <button id="reset">Reset</button>
+            <button id="toggle">Start</button>
         </div>
-
         <div class="set-start">
-            <input type="text" id="startTimeInput" placeholder="e.g. 5:30 or 120" />
+            <input type="text" id="startTimeInput" placeholder="e.g. 5:30  3,20  4.15  90" />
             <button id="set">Set Start</button>
-            <div class="info">Enter minutes:seconds or total seconds</div>
+            <div class="info">Accepts: 5:30  or  3,20  or  4.15  or  120 (seconds)</div>
         </div>
     </div>
 
@@ -115,29 +118,35 @@
         const display = document.getElementById('display');
         const toggleBtn = document.getElementById('toggle');
         const resetBtn = document.getElementById('reset');
-        const setBtn   = document.getElementById('set');
-        const input    = document.getElementById('startTimeInput');
+        const setBtn = document.getElementById('set');
+        const input = document.getElementById('startTimeInput');
 
         function parseTimeString(str) {
-            str = str.trim().replace(/\s+/g, '');
             if (!str) return 0;
+            // Replace all allowed separators with colon → then split
+            str = str.trim()
+                     .replace(/[\s,.]+/g, ':')   // space, comma, dot → :
+                     .replace(/:+/g, ':');       // multiple colons → one
 
+            if (!str) return 0;
             if (/^\d+$/.test(str)) {
                 return parseInt(str, 10) * 1000;
             }
 
-            const parts = str.split(':').map(Number);
-            if (parts.some(isNaN)) return -1;
+            const parts = str.split(':').map(s => s.trim()).filter(Boolean).map(Number);
 
-            let ms = 0;
-            if (parts.length === 1) {
-                ms = parts[0] * 1000;
-            } else if (parts.length === 2) {
-                ms = (parts[0] * 60 + parts[1]) * 1000;
-            } else {
+            if (parts.some(isNaN) || parts.length > 2) {
                 return -1;
             }
-            return ms;
+
+            let seconds = 0;
+            if (parts.length === 1) {
+                seconds = parts[0];
+            } else if (parts.length === 2) {
+                seconds = parts[0] * 60 + parts[1];
+            }
+
+            return seconds * 1000;
         }
 
         function formatTime(msTotal) {
@@ -160,7 +169,7 @@
             updateDisplay();
             toggleBtn.textContent = 'Start';
             toggleBtn.classList.remove('running');
-            input.value = '';
+            // input.value = '';   // optional — you can decide if you want to clear it
         }
 
         function toggleTimer() {
@@ -184,7 +193,6 @@
         }
 
         toggleBtn.addEventListener('click', toggleTimer);
-
         resetBtn.addEventListener('click', fullReset);
 
         setBtn.addEventListener('click', () => {
@@ -195,7 +203,7 @@
 
             const parsed = parseTimeString(input.value);
             if (parsed < 0) {
-                alert("Invalid format.\nUse: 5:30  or  120  or  2:05");
+                alert("Invalid format.\nExamples: 5:30   3,20   4.15   90   2 45");
                 return;
             }
 
@@ -205,7 +213,9 @@
         });
 
         input.addEventListener('keypress', e => {
-            if (e.key === 'Enter') setBtn.click();
+            if (e.key === 'Enter') {
+                setBtn.click();
+            }
         });
 
         // Initial display
