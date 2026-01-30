@@ -4,27 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- SEO Optimized Title - includes main search terms people actually type -->
-    <title>Interactive Online Stopwatch MM:SS | Free Digital Stopwatch with Start Time Set</title>
-    
-    <!-- Meta description: compelling, keyword-rich, ~150-160 characters -->
+    <!-- SEO Optimized -->
+    <title>Online Stopwatch MM:SS | Free Digital Timer with Start Time Set</title>
     <meta name="description" content="Free online stopwatch and MM:SS timer. Set custom start time (5:30, 90 seconds, 4.15), start, pause, reset. Perfect for workouts, cooking, games, meetings and more. No ads, works offline.">
-    
-    <!-- Keywords: relevant high-intent phrases (secondary help, especially for smaller engines) -->
     <meta name="keywords" content="online stopwatch, free stopwatch, digital timer, MM:SS timer, countdown timer, online timer, set start time timer, workout timer, kitchen timer, interval timer, browser stopwatch">
     
-    <!-- Open Graph for better social sharing (helps virality → more backlinks/traffic) -->
+    <!-- Open Graph -->
     <meta property="og:title" content="Online Stopwatch MM:SS - Free Timer with Custom Start">
     <meta property="og:description" content="Simple, beautiful online stopwatch. Set any starting time, start/pause/reset easily. Great for sports, study, cooking and productivity.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://your-domain.com/stopwatch"> <!-- ← replace with real URL -->
-    <meta property="og:image" content="https://your-domain.com/stopwatch-preview.jpg"> <!-- ← add a real screenshot URL later -->
+    <meta property="og:url" content="https://your-domain.com/stopwatch"> <!-- replace with real URL -->
+    <meta property="og:image" content="https://your-domain.com/stopwatch-preview.jpg"> <!-- add real screenshot later -->
     
-    <!-- Optional: tell search engines this is a web app / tool page -->
     <meta name="robots" content="index, follow">
     
     <style>
-        /* your existing styles remain unchanged */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -36,7 +30,76 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        /* ... rest of your CSS ... */
+        .stopwatch {
+            text-align: center;
+            background: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            max-width: 360px;
+            width: 100%;
+        }
+        #display {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0 30px;
+            font-family: monospace;
+            letter-spacing: 4px;
+            color: #111;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        button {
+            font-size: 18px;
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            /* Removed hover effects and transform */
+        }
+        #toggle {
+            min-width: 140px;
+            background-color: #4CAF50; /* green when stopped (Start) */
+        }
+        #toggle.running {
+            background-color: #f44336; /* red when running (Pause) */
+        }
+        #reset {
+            background-color: #2196F3;
+        }
+        #set {
+            background-color: #9C27B0; /* purple */
+            min-width: 140px;
+        }
+        .set-start {
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            font-size: 20px;
+            padding: 12px 16px;
+            width: 160px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            box-shadow: 0 0 0 3px rgba(156,39,176,0.15);
+        }
+        .info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -53,9 +116,104 @@
         </div>
     </div>
 
-    <!-- your existing JavaScript remains unchanged -->
     <script>
-        /* ... your full script here ... no changes needed ... */
+        let timer;
+        let startTime;
+        let elapsedTime = 0;
+        let isRunning = false;
+        let initialOffset = 0; // manual start time in ms
+        const display = document.getElementById('display');
+        const toggleBtn = document.getElementById('toggle');
+        const resetBtn = document.getElementById('reset');
+        const setBtn = document.getElementById('set');
+        const input = document.getElementById('startTimeInput');
+
+        function parseTimeString(str) {
+            if (!str) return 0;
+            str = str.trim()
+                     .replace(/[\s,.]+/g, ':')
+                     .replace(/:+/g, ':');
+            if (!str) return 0;
+            if (/^\d+$/.test(str)) {
+                return parseInt(str, 10) * 1000;
+            }
+            const parts = str.split(':').map(s => s.trim()).filter(Boolean).map(Number);
+            if (parts.some(isNaN) || parts.length > 2) {
+                return -1;
+            }
+            let seconds = 0;
+            if (parts.length === 1) {
+                seconds = parts[0];
+            } else if (parts.length === 2) {
+                seconds = parts[0] * 60 + parts[1];
+            }
+            return seconds * 1000;
+        }
+
+        function formatTime(msTotal) {
+            const totalSeconds = Math.floor(msTotal / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            const current = initialOffset + elapsedTime;
+            display.textContent = formatTime(current);
+        }
+
+        function fullReset() {
+            isRunning = false;
+            clearInterval(timer);
+            initialOffset = 0;
+            elapsedTime = 0;
+            updateDisplay();
+            toggleBtn.textContent = 'Start';
+            toggleBtn.classList.remove('running');
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timer);
+                toggleBtn.textContent = 'Start';
+                toggleBtn.classList.remove('running');
+            } else {
+                isRunning = true;
+                startTime = Date.now() - elapsedTime;
+                timer = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateDisplay();
+                }, 100);
+                toggleBtn.textContent = 'Pause';
+                toggleBtn.classList.add('running');
+            }
+        }
+
+        toggleBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', fullReset);
+        setBtn.addEventListener('click', () => {
+            if (isRunning) {
+                alert("Please pause or reset the timer first.");
+                return;
+            }
+            const parsed = parseTimeString(input.value);
+            if (parsed < 0) {
+                alert("Invalid format.\nExamples: 5:30 3,20 4.15 90 2 45");
+                return;
+            }
+            initialOffset = parsed;
+            elapsedTime = 0;
+            updateDisplay();
+        });
+
+        input.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                setBtn.click();
+            }
+        });
+
+        updateDisplay();
     </script>
 </body>
 </html>
