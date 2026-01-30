@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Optimized -->
+
+    <!-- SEO Optimized Title - includes main search terms people actually type -->
     <title>Online Stopwatch MM:SS | Free Digital Timer with Start Time Set</title>
+
+    <!-- Meta description: compelling, keyword-rich, ~150-160 characters -->
     <meta name="description" content="Free online stopwatch and MM:SS timer. Set custom start time (5:30, 90 seconds, 4.15), start, pause, reset. Perfect for workouts, cooking, games, meetings and more. No ads, works offline.">
+
+    <!-- Keywords: relevant high-intent phrases (secondary help, especially for smaller engines) -->
     <meta name="keywords" content="online stopwatch, free stopwatch, digital timer, MM:SS timer, countdown timer, online timer, set start time timer, workout timer, kitchen timer, interval timer, browser stopwatch">
-    
-    <!-- Open Graph -->
-    <meta property="og:title" content="Online Stopwatch MM:SS - Free Timer with Custom Start">
-    <meta property="og:description" content="Simple, beautiful online stopwatch. Set any starting time, start/pause/reset easily. Great for sports, study, cooking and productivity.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://your-domain.com/stopwatch"> <!-- replace with real URL -->
-    <meta property="og:image" content="https://your-domain.com/stopwatch-preview.jpg"> <!-- add real screenshot later -->
-    
-    <meta name="robots" content="index, follow">
-    
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -62,8 +57,9 @@
             cursor: pointer;
             color: white;
             font-weight: bold;
-            /* Removed hover effects and transform */
+            transition: all 0.18s;
         }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
         #toggle {
             min-width: 140px;
             background-color: #4CAF50; /* green when stopped (Start) */
@@ -77,6 +73,9 @@
         #set {
             background-color: #9C27B0; /* purple */
             min-width: 140px;
+        }
+        #set:hover {
+            background-color: #7B1FA2;
         }
         .set-start {
             margin-top: 10px;
@@ -130,9 +129,10 @@
 
         function parseTimeString(str) {
             if (!str) return 0;
+            // Replace all allowed separators with colon → then split
             str = str.trim()
-                     .replace(/[\s,.]+/g, ':')
-                     .replace(/:+/g, ':');
+                     .replace(/[\s,.]+/g, ':') // space, comma, dot → :
+                     .replace(/:+/g, ':'); // multiple colons → one
             if (!str) return 0;
             if (/^\d+$/.test(str)) {
                 return parseInt(str, 10) * 1000;
@@ -170,15 +170,18 @@
             updateDisplay();
             toggleBtn.textContent = 'Start';
             toggleBtn.classList.remove('running');
+            // input.value = ''; // optional — you can decide if you want to clear it
         }
 
         function toggleTimer() {
             if (isRunning) {
+                // Pause
                 isRunning = false;
                 clearInterval(timer);
                 toggleBtn.textContent = 'Start';
                 toggleBtn.classList.remove('running');
             } else {
+                // Start / Resume
                 isRunning = true;
                 startTime = Date.now() - elapsedTime;
                 timer = setInterval(() => {
@@ -213,6 +216,7 @@
             }
         });
 
+        // Initial display
         updateDisplay();
     </script>
 </body>
